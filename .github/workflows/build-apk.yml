@@ -23,8 +23,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Android SDK einrichten
-        uses: android-actions/setup-android@v3
+  
 
       - name: Android Plattform installieren
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
