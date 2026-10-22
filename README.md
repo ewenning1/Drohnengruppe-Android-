@@ -1,4 +1,4 @@
-# Drohnengruppe – sauberer Android-Neubau (Testprojekt 0.6)
+# Drohnengruppe – sauberer Android-Neubau (Testprojekt 0.7)
 
 **WICHTIG: Dies ist ein vollständiges Android-Quellprojekt und noch KEINE APK.**
 Die APK muss mit den normalen Android-Buildwerkzeugen erzeugt werden. In der
@@ -40,7 +40,7 @@ native Code wurde daher noch nicht auf einem Gerät ausgeführt oder kompiliert.
    auf dem Android-Smartphone installieren.
 
 **Achtung – getrennte Test-App:** Die neue Version hat absichtlich die
-Paketkennung `de.feuerwehr.drohnenlog6`, weil ein GitHub-Debug-Build nicht mit
+Paketkennung `de.feuerwehr.drohnenlog7`, weil ein GitHub-Debug-Build nicht mit
 dem Zertifikat der bisherigen 0.4/0.5 signiert wird. Dadurch lässt sie sich
 parallel installieren und kann alte Daten nicht überschreiben. Alte Daten
 werden **nicht automatisch** übernommen; Testdaten können gegebenenfalls über
@@ -62,3 +62,12 @@ verwenden, dann `gradle :app:assembleDebug` ausführen.
 - `app/src/main/java/de/feuerwehr/drohnenflug/ReminderReceiver.java`: Systembenachrichtigung
 - `app/src/main/assets/index.html`: bestehende vollständige UI und Protokolle
 - `.github/workflows/build-apk.yml`: Cloud-Build
+
+## Änderungen in 0.7
+
+- Akkuwerte: Flugminute (MM:SS) zusätzlich zur Uhrzeit im Flugprotokoll, PDF und CSV; Startmessung exakt 00:00.
+- GPS-Position und automatisch vorgeschlagene Einsatzadresse werden getrennt gespeichert. Geocoder benötigt je nach Gerät eine Datenverbindung; Hausnummer bitte kontrollieren.
+- Zurück-Button bei Flug vorbereiten.
+- Fernbedienungs-Akku unverändert.
+
+Diese Testversion hat wegen der wechselnden Debug-Signierung bei GitHub Actions eine eigene App-ID (drohnenlog7) und wird neben 0.6 installiert. Daten bleiben in 0.6, werden nicht automatisch übertragen.

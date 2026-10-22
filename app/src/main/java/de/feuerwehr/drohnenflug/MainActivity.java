@@ -10,6 +10,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.Geocoder;
+import android.location.Address;
+import java.util.List;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -126,8 +129,35 @@ public final class MainActivity extends Activity implements LocationListener {
     private void deliverLocation(Location location) {
         ++locationRequestToken;
         if (locationManager != null) { locationManager.removeUpdates(this); locationManager = null; }
-        eval(String.format(Locale.US, "window.nativeGps(%.7f,%.7f)",
-            location.getLatitude(), location.getLongitude()));
+        final double lat=location.getLatitude(),lon=location.getLongitude();
+        eval(String.format(Locale.US, "window.nativeGps(%.7f,%.7f)",lat,lon));
+        new Thread(() -> {
+            try {
+                if (!Geocoder.isPresent()) throw new IllegalStateException("Geocoder unavailable");
+                List<Address> matches=new Geocoder(this, Locale.GERMANY).getFromLocation(lat,lon,1);
+                if (matches==null || matches.isEmpty()) throw new IllegalStateException("No address");
+                Address a=matches.get(0);
+                String street=a.getThoroughfare(),house=a.getSubThoroughfare();
+                String postcode=a.getPostalCode(),city=a.getLocality();
+                if (city==null) city=a.getSubAdminArea();
+                StringBuilder full=new StringBuilder();
+                if (street!=null&&!street.isEmpty()) full.append(street);
+                if (house!=null&&!house.isEmpty()) full.append(" ").append(house);
+                if (postcode!=null&&!postcode.isEmpty()) {
+                    if(full.length()>0)full.append(", ");
+                    full.append(postcode);
+                }
+                if (city!=null&&!city.isEmpty()) {
+                    if(full.length()>0)full.append(" ");
+                    full.append(city);
+                }
+                if (full.length()==0) throw new IllegalStateException("No street address");
+                eval(String.format(Locale.US,"window.nativeAddress(%s,%.7f,%.7f)",
+                    JSONObject.quote(full.toString()),lat,lon));
+            } catch (Exception e) {
+                eval("window.nativeAddressUnavailable()");
+            }
+        }, "drohne-reverse-geocoder").start();
     }
 
     @Override public void onLocationChanged(Location location) { deliverLocation(location); }
