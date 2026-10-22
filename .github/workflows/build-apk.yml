@@ -25,8 +25,10 @@ jobs:
 
   
 
-      - name: Android Plattform installieren
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+           - name: Android SDK installieren
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0'
 
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
