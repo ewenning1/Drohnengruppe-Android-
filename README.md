@@ -1,4 +1,4 @@
-# Drohnengruppe – sauberer Android-Neubau (Testprojekt 0.7)
+# Drohnengruppe – sauberer Android-Neubau (Testprojekt 0.8)
 
 **WICHTIG: Dies ist ein vollständiges Android-Quellprojekt und noch KEINE APK.**
 Die APK muss mit den normalen Android-Buildwerkzeugen erzeugt werden. In der
@@ -40,7 +40,7 @@ native Code wurde daher noch nicht auf einem Gerät ausgeführt oder kompiliert.
    auf dem Android-Smartphone installieren.
 
 **Achtung – getrennte Test-App:** Die neue Version hat absichtlich die
-Paketkennung `de.feuerwehr.drohnenlog7`, weil ein GitHub-Debug-Build nicht mit
+Paketkennung `de.feuerwehr.drohnenlog8`, weil ein GitHub-Debug-Build nicht mit
 dem Zertifikat der bisherigen 0.4/0.5 signiert wird. Dadurch lässt sie sich
 parallel installieren und kann alte Daten nicht überschreiben. Alte Daten
 werden **nicht automatisch** übernommen; Testdaten können gegebenenfalls über
@@ -63,6 +63,15 @@ verwenden, dann `gradle :app:assembleDebug` ausführen.
 - `app/src/main/assets/index.html`: bestehende vollständige UI und Protokolle
 - `.github/workflows/build-apk.yml`: Cloud-Build
 
+## Änderungen in 0.8
+
+- Eine zusätzliche feststehende Zurücktaste am unteren Bildschirmrand, solange „Flug vorbereiten“ geöffnet ist. Die obere Zurücktaste bleibt erhalten.
+- Die Android-Zurücktaste und Zurückgeste führen aus „Flug vorbereiten“ zur Einsatzübersicht, ohne den Flug zu starten.
+- Einsatzadresse (Straße/Hausnummer/Ort, sofern Geocoder verfügbar) ist nach GPS-Abfrage deutlich sichtbar; Koordinaten bleiben separat. Adresse kontrollieren und nötigenfalls manuell angeben.
+- Flugzeiten im Einsatzbericht, in CSV und in abgeschlossenen Fluglisten werden als Minuten (mit zwei Dezimalstellen) ausgegeben. Laufende Timer bleiben auf Stunden:Minuten:Sekunden.
+- Der manuelle Fernbedienungsakkustand bei Start und Ende wird nun direkt in den Flugdetails zusammen angezeigt. Es gibt keine automatische Bluetooth-Akkumessung.
+- Die neue Test-App-ID `de.feuerwehr.drohnenlog8` verhindert Installationskonflikte; ältere Versionen bleiben separat und ihre Daten werden nicht automatisch übernommen.
+
 ## Änderungen in 0.7
 
 - Akkuwerte: Flugminute (MM:SS) zusätzlich zur Uhrzeit im Flugprotokoll, PDF und CSV; Startmessung exakt 00:00.
@@ -70,4 +79,4 @@ verwenden, dann `gradle :app:assembleDebug` ausführen.
 - Zurück-Button bei Flug vorbereiten.
 - Fernbedienungs-Akku unverändert.
 
-Diese Testversion hat wegen der wechselnden Debug-Signierung bei GitHub Actions eine eigene App-ID (drohnenlog7) und wird neben 0.6 installiert. Daten bleiben in 0.6, werden nicht automatisch übertragen.
+Diese Testversion hat wegen der wechselnden Debug-Signierung bei GitHub Actions eine eigene App-ID (drohnenlog8) und wird neben 0.7 installiert. Daten bleiben in 0.7, werden nicht automatisch übertragen.

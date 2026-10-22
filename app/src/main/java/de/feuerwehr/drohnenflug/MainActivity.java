@@ -72,7 +72,19 @@ public final class MainActivity extends Activity implements LocationListener {
         web.addJavascriptInterface(new DroneBridge(), "NativeBridge");
         setContentView(web);
         web.loadUrl("file:///android_asset/index.html");
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleAppBack);
+        }
     }
+
+    private void handleAppBack() {
+        if (web == null) { finish(); return; }
+        web.evaluateJavascript("(function(){return !!(window.handleAndroidBack && window.handleAndroidBack());})()",
+            handled -> { if (!"true".equals(handled)) finish(); });
+    }
+
+    @Override public void onBackPressed() { handleAppBack(); }
 
     private void eval(String js) {
         runOnUiThread(() -> { if (web != null) web.evaluateJavascript(js, null); });
