@@ -23,6 +23,8 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebChromeClient;
+import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.widget.Toast;
 import org.json.JSONObject;
@@ -40,6 +42,8 @@ public final class MainActivity extends Activity implements LocationListener {
     private static final int NOTICE_PERMISSION_CODE = 302;
     private static final int SAVE_FILE_CODE = 303;
     private WebView web;
+    private static final int PHOTO_PICK_CODE = 304;
+    private ValueCallback<Uri[]> photoFileCallback;
     private LocationManager locationManager;
     private byte[] pendingFile;
     private int locationRequestToken = 0;
@@ -67,6 +71,23 @@ public final class MainActivity extends Activity implements LocationListener {
                     return true;
                 }
                 return false;
+            }
+        });
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (photoFileCallback != null) photoFileCallback.onReceiveValue(null);
+                photoFileCallback = callback;
+                try {
+                    Intent pick = new Intent(Intent.ACTION_GET_CONTENT);
+                    pick.addCategory(Intent.CATEGORY_OPENABLE);
+                    pick.setType("image/*");
+                    startActivityForResult(Intent.createChooser(pick, "Drohnenfoto auswählen"), PHOTO_PICK_CODE);
+                    return true;
+                } catch (Exception e) {
+                    photoFileCallback = null;
+                    callback.onReceiveValue(null);
+                    return false;
+                }
             }
         });
         web.addJavascriptInterface(new DroneBridge(), "NativeBridge");
@@ -236,6 +257,15 @@ public final class MainActivity extends Activity implements LocationListener {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PHOTO_PICK_CODE) {
+            if (photoFileCallback != null) {
+                Uri[] result = resultCode == RESULT_OK && data != null && data.getData() != null
+                    ? new Uri[]{data.getData()} : null;
+                photoFileCallback.onReceiveValue(result);
+                photoFileCallback = null;
+            }
+            return;
+        }
         if (requestCode != SAVE_FILE_CODE || resultCode != RESULT_OK || data == null || data.getData() == null)
             return;
         Uri dest = data.getData();
