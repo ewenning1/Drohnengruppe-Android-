@@ -1,0 +1,15 @@
+Drohnengruppe 1.0.1 Test – Vorgangs-Sperre und Backup
+
+- Maximal ein laufender Einsatz oder Übungsdienst. Neue-Buttons werden bei aktivem Vorgang verborgen.
+- Auch beim Speichern wird die Ein-Vorgang-Regel geprüft.
+- Abschluss weiterhin nur nach Landung aller laufenden Flüge und PIN-Bestätigung.
+- Bei Abschluss wird automatisch ein vollständiges JSON-Backup im privaten App-Speicher abgelegt.
+- Unter Daten einsehen > Daten exportieren / sichern kann ein Backup-Ordner über Androids Ordnerauswahl einmalig autorisiert werden.
+- Die App versucht, in diesen Ordner automatisch eine JSON-Datei zu schreiben. Die Zugriffsberechtigung wird gespeichert.
+- Scheitert der externe Schreibzugriff, bleibt die lokale Kopie erhalten. Ausstehende Dateien werden beim nächsten App-Start nach Einrichtung des Ordners erneut versucht.
+
+WICHTIG: Google Drive stellt nicht auf allen Android-Geräten beschreibbare Ordner über die Android-Ordnerauswahl bereit. In diesem Fall ist ein vollautomatischer Google-Drive-Upload mit dieser Version NICHT möglich; es wird lokal gesichert. Ein echter Drive-API-Upload mit Google-OAuth ist NICHT eingebaut.
+
+Der private App-Speicher wird bei Deinstallation der App gelöscht. Bitte weiterhin regelmäßig manuelle JSON-Backups über die Exportfunktion außerhalb der App ablegen. Vor Update vorsichtshalber manuell sichern.
+
+Ungetestet: APK-Kompilierung und Android-Laufzeittest. JavaScript-Syntax wurde geprüft.

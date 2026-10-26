@@ -16,6 +16,9 @@ import java.util.List;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.provider.DocumentsContract;
+import java.io.File;
+import java.io.FileOutputStream;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
@@ -41,6 +44,7 @@ public final class MainActivity extends Activity implements LocationListener {
     private static final int GPS_PERMISSION_CODE = 301;
     private static final int NOTICE_PERMISSION_CODE = 302;
     private static final int SAVE_FILE_CODE = 303;
+    private static final int BACKUP_FOLDER_CODE = 305;
     private WebView web;
     private static final int PHOTO_PICK_CODE = 304;
     private ValueCallback<Uri[]> photoFileCallback;
@@ -93,6 +97,7 @@ public final class MainActivity extends Activity implements LocationListener {
         web.addJavascriptInterface(new DroneBridge(), "NativeBridge");
         setContentView(web);
         web.loadUrl("file:///android_asset/index.html");
+        retryPendingBackups();
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
                 android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleAppBack);
@@ -266,6 +271,21 @@ public final class MainActivity extends Activity implements LocationListener {
             }
             return;
         }
+        if (requestCode == BACKUP_FOLDER_CODE) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                Uri tree = data.getData();
+                try {
+                    getContentResolver().takePersistableUriPermission(tree,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    getPreferences(MODE_PRIVATE).edit().putString("backupTree",tree.toString()).apply();
+                    eval("window.nativeCloudFolderStatus('selected')");
+                    retryPendingBackups();
+                } catch (Exception e) {
+                    eval("window.nativeBackupStatus('local',"+JSONObject.quote("Ordnerberechtigung fehlgeschlagen: "+e.getMessage())+")");
+                }
+            } else eval("window.nativeCloudFolderStatus('cancelled')");
+            return;
+        }
         if (requestCode != SAVE_FILE_CODE || resultCode != RESULT_OK || data == null || data.getData() == null)
             return;
         Uri dest = data.getData();
@@ -313,7 +333,68 @@ public final class MainActivity extends Activity implements LocationListener {
         }, "drohne-weather").start();
     }
 
+    private void chooseBackupFolder() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        try { startActivityForResult(intent,BACKUP_FOLDER_CODE); }
+        catch(Exception e) { eval("window.nativeBackupStatus('error',"+JSONObject.quote(e.getMessage())+")"); }
+    }
+    private void retryPendingBackups() {
+        new Thread(() -> {
+            String treeStr=getPreferences(MODE_PRIVATE).getString("backupTree",null);
+            if(treeStr==null)return;
+            File dir=new File(getFilesDir(),"einsatz_backups");
+            File[] files=dir.listFiles();if(files==null)return;
+            for(File file:files){
+                if(!file.isFile()||!file.getName().endsWith(".json"))continue;
+                File uploaded=new File(dir,file.getName()+".uploaded");
+                if(uploaded.exists())continue;
+                try {
+                    Uri tree=Uri.parse(treeStr);
+                    Uri root=DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));
+                    Uri target=DocumentsContract.createDocument(getContentResolver(),root,"application/json",file.getName());
+                    if(target==null)continue;
+                    try(InputStream in=new java.io.FileInputStream(file);OutputStream out=getContentResolver().openOutputStream(target,"w")){
+                        if(out==null)continue;
+                        byte[] buf=new byte[8192];int n;while((n=in.read(buf))!=-1)out.write(buf,0,n);
+                        out.flush();
+                    }
+                    uploaded.createNewFile();
+                }catch(Exception ignored){}
+            }
+        },"drohne-backup-retry").start();
+    }
+    private void autoBackup(String filename,String json) {
+        new Thread(() -> {
+            try {
+                File dir = new File(getFilesDir(),"einsatz_backups");
+                if(!dir.exists() && !dir.mkdirs())throw new Exception("Backup-Verzeichnis nicht verfügbar");
+                File local = new File(dir,filename);
+                byte[] bytes=json.getBytes(StandardCharsets.UTF_8);
+                try(FileOutputStream out=new FileOutputStream(local)){out.write(bytes);out.getFD().sync();}
+                String treeStr=getPreferences(MODE_PRIVATE).getString("backupTree",null);
+                if(treeStr==null){eval("window.nativeBackupStatus('local','Lokal gesichert; kein Cloud-Ordner eingerichtet')");return;}
+                try {
+                    Uri tree=Uri.parse(treeStr);
+                    Uri root=DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));
+                    Uri target=DocumentsContract.createDocument(getContentResolver(),root,"application/json",filename);
+                    if(target==null)throw new Exception("Ordner erlaubt keine Dateierstellung");
+                    try(OutputStream stream=getContentResolver().openOutputStream(target,"w")){
+                        if(stream==null)throw new Exception("Ordner ist nicht beschreibbar");
+                        stream.write(bytes);stream.flush();
+                    }
+                    new File(dir,filename+".uploaded").createNewFile();
+                    eval("window.nativeBackupStatus('cloud','Lokal und im gewählten Ordner gesichert')");
+                }catch(Exception cloudError){
+                    eval("window.nativeBackupStatus('local',"+JSONObject.quote("Lokal gesichert; Cloud fehlgeschlagen: "+cloudError.getMessage())+")");
+                }
+            }catch(Exception error){eval("window.nativeBackupStatus('error',"+JSONObject.quote(error.getMessage())+")");}
+        },"drohne-autobackup").start();
+    }
     private final class DroneBridge {
+        @JavascriptInterface public void chooseBackupFolder(){runOnUiThread(() -> MainActivity.this.chooseBackupFolder());}
+        @JavascriptInterface public void autoBackup(String filename,String json){MainActivity.this.autoBackup(filename,json);}
         @JavascriptInterface public void getLocation() { runOnUiThread(() -> requestLocation()); }
         @JavascriptInterface public void getTemperature(double lat, double lon) {
             requestTemperature(lat, lon);
