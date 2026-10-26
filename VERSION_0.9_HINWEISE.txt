@@ -1,0 +1,5 @@
+Drohnengruppe 0.9 Testversion
+
+Neu: Logo im App-Icon und Kopfbereich; rot-weißes Logo auf weißen PDF-Berichtsseiten; Akku-Seriennummern in Einstellungen > Drohnen > Bearbeiten. Seriennummer wird bei neuen Flügen gespeichert und im Bericht/CSV ausgegeben.
+
+Wichtig: Bereits gespeicherte Flüge behalten ihre bisherigen Daten. Vor dem Update Backup in der App sichern. Langzeit-Akkuanalyse und WLAN-Synchronisierung sind noch nicht umgesetzt. Diese Version ist eine Testversion, nicht für sicherheitskritischen Einsatz freigegeben.
